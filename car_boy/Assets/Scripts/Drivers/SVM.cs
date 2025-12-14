@@ -12,6 +12,14 @@ public class SVM
         Randomize();
     }
 
+    public SVM(SVM other)
+    {
+        weights = new float[other.weights.Length];
+        for (int i = 0; i < other.weights.Length; i++)
+            weights[i] = other.weights[i];
+        bias = other.bias;
+    }
+
     public void Randomize()
     {
         for (int i = 0; i < weights.Length; i++)

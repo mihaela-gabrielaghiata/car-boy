@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class EvolutionManager : MonoBehaviour
 {
+    public HUDController hudController;
+
     public GameObject start;
     public GameObject carPrefab;
     public GameObject MVCar;
@@ -33,6 +35,18 @@ public class EvolutionManager : MonoBehaviour
         GameObject bestCar = getBestCar();
         mainCam.GetComponent<CameraFollow>().target = bestCar.transform;
 
+    }
+
+    public void PopulationSizeChanged()
+    {
+        int newSize = hudController.GetPopulationSize();
+        populationSize = newSize;
+        InitializePopulation();
+    }
+
+    public void RestartSimulation()
+    {
+        InitializePopulation();
     }
 
     void InitializePopulation()

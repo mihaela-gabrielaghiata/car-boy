@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class MaxVerstappenDriver : ICarDriver
 {
@@ -75,6 +76,32 @@ public class MaxVerstappenDriver : ICarDriver
             selectedDirection[LEFT] = false;
             selectedDirection[RIGHT] = false;
         }
+    }
+
+    public List<SVM> GetSVM()
+    {
+        if(svmLeft == null || svmRight == null || svmForward == null)
+        {
+            Debug.LogError("SVMs are not initialized!");
+            return null;
+        }
+        List<SVM> svms = new List<SVM>();
+        svms.Add(new SVM(svmLeft));
+        svms.Add(new SVM(svmRight));
+        svms.Add(new SVM(svmForward));
+        return svms;
+    }
+
+    public void SetSVM(List<SVM> svms)
+    {
+        if(svms == null || svms.Count != 3)
+        {
+            Debug.LogError("Invalid SVM list provided!");
+            return;
+        }
+        svmLeft = new SVM(svms[0]);
+        svmRight = new SVM(svms[1]);
+        svmForward = new SVM(svms[2]);
     }
 
     public float GetDistanceTravelled()
