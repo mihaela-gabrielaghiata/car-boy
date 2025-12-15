@@ -1,20 +1,21 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.IO;
 
 public class MaxVerstappenDriver : ICarDriver
 {
     public GameObject sensorObject;
 
-    public SVM svmLeft;
-    public SVM svmRight;
-    public SVM svmForward;
+    public SVM svmLeft = null;
+    public SVM svmRight = null;
+    public SVM svmForward = null;
 
     Vector3 lastPos;
     float distanceTravelled;
 
     private DistanceSensor sensor;
 
-    void Start()
+    void Awake()
     {
         lastPos = transform.position;
         distanceTravelled = 0f;
@@ -23,11 +24,15 @@ public class MaxVerstappenDriver : ICarDriver
 
         int sizeN = sensor.GetNumberOfRays();
 
-        Debug.Log("Number of sensor rays: " + sizeN);
-
+        //Debug.Log("Initializing SVMs for MaxVerstappenDriver");
         svmLeft = new SVM(sizeN);
         svmRight = new SVM(sizeN);
         svmForward = new SVM(sizeN);
+    }
+
+    void Start()
+    {
+        
     }
 
     // Update is called once per frame
@@ -94,7 +99,8 @@ public class MaxVerstappenDriver : ICarDriver
 
     public void SetSVM(List<SVM> svms)
     {
-        if(svms == null || svms.Count != 3)
+        //Debug.Log("Setting SVMs for MaxVerstappenDriver");
+        if (svms == null || svms.Count != 3)
         {
             Debug.LogError("Invalid SVM list provided!");
             return;

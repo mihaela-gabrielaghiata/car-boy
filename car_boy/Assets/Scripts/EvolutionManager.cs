@@ -22,6 +22,9 @@ public class EvolutionManager : MonoBehaviour
     private float bestRecordDistance = 0f;
     private float currentGenBestDistance = 0f;
 
+    private Brain bestBrain;
+    private string mode = "evolving";
+
     private Camera mainCam;
     private GameObject[] population;
 
@@ -29,6 +32,7 @@ public class EvolutionManager : MonoBehaviour
     public void Start()
     {
         mainCam = Camera.main;
+        bestBrain = new Brain();
 
         InitializePopulation();
     }
@@ -38,7 +42,14 @@ public class EvolutionManager : MonoBehaviour
     {
         if (allCarsCrashed())
         {
-            EvolvePopulation();
+            if (mode == "evolving")
+            {
+                EvolvePopulation();
+            }
+            else if (mode == "best_loaded")
+            {
+                InitializePopulation(new List<List<SVM>> { bestBrain.GetSVMs() });
+            }
         }
         GameObject bestCar = getBestCar();
         if (bestCar != null)
@@ -76,11 +87,25 @@ public class EvolutionManager : MonoBehaviour
     {
         generation = 1;
         bestRecordDistance = 0f;
+        mode = "evolving";
         InitializePopulation();
+    }
+
+    public void SaveBestGenome()
+    {
+        bestBrain.SaveBrain("best");
+    }
+
+    public void LoadBestGenome()
+    {
+        bestBrain.LoadBrain("best");
+        InitializePopulation(new List<List<SVM>> { bestBrain.GetSVMs() });
+        mode = "best_loaded";
     }
 
     void InitializePopulation(List<List<SVM>> genomes = null)
     {
+        Debug.Log("Genomes count: " + (genomes != null ? genomes.Count : 0));
         Vector3 spawnPos = start.transform.position;
 
         if (population != null)
@@ -91,8 +116,14 @@ public class EvolutionManager : MonoBehaviour
             }
         }
 
-        population = new GameObject[populationSize];
-        for (int i = 0; i < populationSize; i++)
+        int currentSize = populationSize;
+        if (genomes != null)
+        {
+            currentSize = genomes.Count;
+        }
+
+        population = new GameObject[currentSize];
+        for (int i = 0; i < currentSize; i++)
         {
             population[i] = Instantiate(MVCar, spawnPos, Quaternion.identity);
 
@@ -157,6 +188,7 @@ public class EvolutionManager : MonoBehaviour
             if (genBest > bestRecordDistance)
             {
                 bestRecordDistance = genBest;
+                bestBrain = new Brain(rankedPopulation[0].genome);
             }
         }
 
@@ -166,6 +198,7 @@ public class EvolutionManager : MonoBehaviour
         {
             nextGenGenomes.Add(CloneGenome(rankedPopulation[i].genome));
         }
+        Debug.Log($"Next generation init: {nextGenGenomes.Count}");
 
         while (nextGenGenomes.Count < populationSize)
         {
