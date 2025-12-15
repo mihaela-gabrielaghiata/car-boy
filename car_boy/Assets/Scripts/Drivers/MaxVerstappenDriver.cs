@@ -11,14 +11,20 @@ public class MaxVerstappenDriver : ICarDriver
     public SVM svmForward = null;
 
     Vector3 lastPos;
-    float distanceTravelled;
+    float score;
 
     private DistanceSensor sensor;
+
+    private bool lapEnded = false;
+    private bool lapStarted = false;
+
+    private float startLapTime;
+    private float lapTime = -1f;
 
     void Awake()
     {
         lastPos = transform.position;
-        distanceTravelled = 0f;
+        score = 0f;
 
         sensor = sensorObject.GetComponent<DistanceSensor>();
 
@@ -38,7 +44,7 @@ public class MaxVerstappenDriver : ICarDriver
     // Update is called once per frame
     void Update()
     {
-        if (!colided)
+        if (!colided && !lapEnded)
         {
             float[] distances = sensor.GetDistances();
 
@@ -71,7 +77,7 @@ public class MaxVerstappenDriver : ICarDriver
                 selectedDirection[RIGHT] = false;
             }
             
-            distanceTravelled += Vector3.Distance(transform.position, lastPos);
+            score += Vector3.Distance(transform.position, lastPos);
             lastPos = transform.position;
         }
         else
@@ -81,6 +87,30 @@ public class MaxVerstappenDriver : ICarDriver
             selectedDirection[LEFT] = false;
             selectedDirection[RIGHT] = false;
         }
+    }
+
+    public void CollideStart()
+    {
+        if (!lapStarted)
+        {
+            lapStarted = true;
+            startLapTime = Time.time;
+        }
+        else
+        {
+            if (!lapEnded)
+            {
+                lapEnded = true;
+                lapTime = Time.time - startLapTime;
+                Debug.Log("Lap completed in " + lapTime + " seconds.");
+                score = 5000f - lapTime * 10f; // Bonus for completing the lap
+            }
+        }
+    }
+
+    public bool HasLapEnded()
+    {
+        return lapEnded;
     }
 
     public List<SVM> GetSVM()
@@ -112,6 +142,11 @@ public class MaxVerstappenDriver : ICarDriver
 
     public float GetDistanceTravelled()
     {
-        return distanceTravelled;
+        return score;
+    }
+
+    public float GetLapTime()
+    {
+        return lapTime;
     }
 }

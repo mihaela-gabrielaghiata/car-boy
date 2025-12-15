@@ -6,7 +6,7 @@ public class DistanceSensor : MonoBehaviour
     [Header("Sensor Settings")]
     public float sensorRange = 10f;
     [Range(0, 10)]
-    public int numberOfDirectionsPerSide = 7;
+    public int numberOfDirectionsPerSide = 3;
     public bool debugMode = true;
     public float lineWidth = 0.05f;
     public LayerMask detectionLayer;

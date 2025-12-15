@@ -20,6 +20,7 @@ public class EvolutionManager : MonoBehaviour
 
     private int generation = 1;
     private float bestRecordDistance = 0f;
+    private float bestRecordLapTime = -1f;
     private float currentGenBestDistance = 0f;
 
     private Brain bestBrain;
@@ -70,10 +71,11 @@ public class EvolutionManager : MonoBehaviour
         style.fontSize = 20;
         style.normal.textColor = Color.white;
 
-        GUI.Box(new Rect(10, 10, 300, 100), "");
+        GUI.Box(new Rect(10, 10, 300, 130), "");
         GUI.Label(new Rect(20, 20, 280, 30), $"Generation: {generation}", style);
         GUI.Label(new Rect(20, 50, 280, 30), $"Current Best Dist: {currentGenBestDistance:F2}", style);
         GUI.Label(new Rect(20, 80, 280, 30), $"All-Time Record: {bestRecordDistance:F2}", style);
+        GUI.Label(new Rect(20, 110, 280, 30), $"All-Time Lap Time Record: {bestRecordLapTime:F2}", style);
     }
 
     public void PopulationSizeChanged()
@@ -87,6 +89,7 @@ public class EvolutionManager : MonoBehaviour
     {
         generation = 1;
         bestRecordDistance = 0f;
+        bestRecordLapTime = -1f;
         mode = "evolving";
         InitializePopulation();
     }
@@ -139,8 +142,8 @@ public class EvolutionManager : MonoBehaviour
     {
         foreach (GameObject car in population)
         {
-            ICarDriver driver = car.GetComponent<ICarDriver>();
-            if (!driver.HasCollided())
+            MaxVerstappenDriver driver = car.GetComponent<MaxVerstappenDriver>();
+            if (!driver.HasCollided() && !driver.HasLapEnded())
             {
                 return false;
             }
@@ -169,14 +172,14 @@ public class EvolutionManager : MonoBehaviour
     {
         generation++;
 
-        List<(List<SVM> genome, float fitness)> rankedPopulation = new List<(List<SVM>, float)>();
+        List<(List<SVM> genome, float fitness, float lapTime)> rankedPopulation = new List<(List<SVM>, float, float)>();
 
         foreach (GameObject car in population)
         {
             MaxVerstappenDriver driver = car.GetComponent<MaxVerstappenDriver>();
             if (driver != null)
             {
-                rankedPopulation.Add((driver.GetSVM(), driver.GetDistanceTravelled()));
+                rankedPopulation.Add((driver.GetSVM(), driver.GetDistanceTravelled(), driver.GetLapTime()));
             }
         }
 
@@ -188,6 +191,7 @@ public class EvolutionManager : MonoBehaviour
             if (genBest > bestRecordDistance)
             {
                 bestRecordDistance = genBest;
+                bestRecordLapTime = rankedPopulation[0].lapTime;
                 bestBrain = new Brain(rankedPopulation[0].genome);
             }
         }
@@ -224,7 +228,7 @@ public class EvolutionManager : MonoBehaviour
         InitializePopulation(nextGenGenomes);
     }
 
-    List<SVM> TournamentSelection(List<(List<SVM> genome, float fitness)> rankedPop)
+    List<SVM> TournamentSelection(List<(List<SVM> genome, float fitness, float lapTime)> rankedPop)
     {
         var best = rankedPop[Random.Range(0, rankedPop.Count)];
 
