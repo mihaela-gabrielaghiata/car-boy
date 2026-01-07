@@ -91,6 +91,7 @@ public class EvolutionManager : MonoBehaviour
         bestRecordDistance = 0f;
         bestRecordLapTime = -1f;
         mode = "evolving";
+        if (!Application.isPlaying) return;
         InitializePopulation();
     }
 
@@ -170,20 +171,32 @@ public class EvolutionManager : MonoBehaviour
 
     void EvolvePopulation()
     {
-        generation++;
-
         List<(List<SVM> genome, float fitness, float lapTime)> rankedPopulation = new List<(List<SVM>, float, float)>();
 
-        foreach (GameObject car in population)
+        if (population != null)
         {
-            MaxVerstappenDriver driver = car.GetComponent<MaxVerstappenDriver>();
-            if (driver != null)
+            foreach (GameObject car in population)
             {
-                rankedPopulation.Add((driver.GetSVM(), driver.GetDistanceTravelled(), driver.GetLapTime()));
+                if (car == null) continue;
+                MaxVerstappenDriver driver = car.GetComponent<MaxVerstappenDriver>();
+                if (driver != null)
+                {
+                    rankedPopulation.Add((driver.GetSVM(), driver.GetDistanceTravelled(), driver.GetLapTime()));
+                }
             }
         }
 
         rankedPopulation = rankedPopulation.OrderByDescending(x => x.fitness).ToList();
+
+        // If there are no genomes to evolve, reinitialize population and do not increment generation
+        if (rankedPopulation.Count == 0)
+        {
+            InitializePopulation();
+            Debug.Log("EvolvePopulation: no ranked genomes, reinitialized population");
+            return;
+        }
+
+        generation++;
 
         if (rankedPopulation.Count > 0)
         {
@@ -211,7 +224,7 @@ public class EvolutionManager : MonoBehaviour
 
             List<SVM> child;
 
-            if (Random.value < crossoverRate)
+            if (Random.value < crossoverRate && parent1.Count == parent2.Count && parent1.Count > 0)
             {
                 child = ArithmeticCrossover(parent1, parent2);
             }
@@ -230,17 +243,29 @@ public class EvolutionManager : MonoBehaviour
 
     List<SVM> TournamentSelection(List<(List<SVM> genome, float fitness, float lapTime)> rankedPop)
     {
-        var best = rankedPop[Random.Range(0, rankedPop.Count)];
+        var result = new List<SVM>();
+        if (rankedPop == null || rankedPop.Count == 0) return result;
 
-        for (int i = 1; i < tournamentSize; i++)
+        int effectiveTournament = Mathf.Min(tournamentSize, rankedPop.Count);
+
+        int idx = (rankedPop.Count > 0) ? UnityEngine.Random.Range(0, rankedPop.Count) : 0;
+        if (idx < 0 || idx >= rankedPop.Count) idx = 0;
+        var best = rankedPop[idx];
+        for (int i = 1; i < effectiveTournament; i++)
         {
-            var candidate = rankedPop[Random.Range(0, rankedPop.Count)];
+            int cidx = (rankedPop.Count > 0) ? UnityEngine.Random.Range(0, rankedPop.Count) : 0;
+            if (cidx < 0 || cidx >= rankedPop.Count) cidx = 0;
+            var candidate = rankedPop[cidx];
             if (candidate.fitness > best.fitness)
             {
                 best = candidate;
             }
         }
-        return CloneGenome(best.genome);
+
+        if (best.genome != null)
+            return CloneGenome(best.genome);
+
+        return result;
     }
 
     List<SVM> ArithmeticCrossover(List<SVM> p1, List<SVM> p2)
